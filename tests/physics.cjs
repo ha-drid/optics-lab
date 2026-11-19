@@ -1,0 +1,11 @@
+const assert=require('node:assert/strict');const {polygon,overlap,bend,trace}=require('../physics.js');
+const close=(a,b,eps=1e-6)=>assert(Math.abs(a-b)<eps,`${a} != ${b}`);
+let a=Math.PI/6,r=bend({x:Math.cos(a),y:Math.sin(a)},{x:-1,y:0},1,1.5);close(r.d.y,1/3);assert(!r.tir);
+r=bend({x:.5,y:Math.sqrt(3)/2},{x:-1,y:0},1.5,1);assert(r.tir);close(r.d.x,-.5);
+let box={id:'a',type:'rect',x:0,y:0,w:40,h:200,angle:0,n:1.5,material:'glass'};
+let path=trace({x:-100,y:0},{x:Math.cos(a),y:Math.sin(a)},[box]);assert.equal(path.segments.length,3);let last=path.segments.at(-1);close((last[1].y-last[0].y)/(last[1].x-last[0].x),Math.tan(a));
+let mirror={...box,material:'mirror'},m=trace({x:-100,y:0},{x:1,y:0},[mirror]);assert.equal(m.segments.length,2);assert(m.segments[1][1].x<m.segments[1][0].x);
+assert(overlap(polygon(box),polygon({...box,x:10})));assert(!overlap(polygon(box),polygon({...box,x:60})));assert(overlap(polygon(box),polygon({...box,x:10,angle:45})));
+let lens={...box,type:'lens',w:75,h:240};let ray=trace({x:-200,y:-40},{x:1,y:0},[lens]);last=ray.segments.at(-1);assert(last[1].y>last[0].y);assert.equal(ray.segments.length,3);
+let trapped=trace({x:0,y:0},{x:1,y:0},[{...box,x:-60,material:'mirror'},{...box,id:'b',x:60,material:'mirror'}],40);assert(trapped.limited);assert.equal(trapped.segments.length,40);
+console.log('Passed: Snell, TIR, parallel slab, mirror, collisions, lens, reflection limit');
